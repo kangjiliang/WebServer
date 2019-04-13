@@ -6,8 +6,10 @@
 
 using namespace std;
 
-extern string url_encode(const string& src);
-extern string url_decode(const string& src);
+string url_encode(const string& src);
+string url_decode(const string& src);
 
+string base64_encode(const string& src);
+string base64_decode(const string& src);
 
 #endif

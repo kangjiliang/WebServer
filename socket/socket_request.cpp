@@ -78,7 +78,8 @@ BOOL sendinfo(const SOCKFD& fd, STRING& info)
     {
         return TRUE;
     }
-
+    //向一个已关闭的socket发送数据时 会触发SIGPIPE信号 该信号默认会退出进程
+    //MSG_NOSIGNAL可以禁止send函数向系统发送异常消息
     sendlen = send(fd, info.data(), info.size(), MSG_NOSIGNAL);
     if(0 < sendlen)
     {

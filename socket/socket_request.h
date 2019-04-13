@@ -112,7 +112,7 @@ public:
     virtual BOOL  dispatch() = 0;
     virtual BOOL  process() = 0;
 protected:
-    STRMAP         m_reqinfo;//
+    STRMAP         m_reqinfo;//保存接收到的请求信息
     STRING         m_rbuff;  //接收数据的buffer
     STRING         m_sbuff;  //发送数据的buffer
     CSocketAddress m_saddr;  //本端地址

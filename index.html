@@ -4,11 +4,36 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <title>WEBSERVER</title>
 </head>
-
+<script type="text/javascript">
+function ajax_post(cgiscript, info){
+    var xmlhttp;
+    if (window.XMLHttpRequest){// code for IE7+, Firefox, Chrome, Opera, Safari
+        xmlhttp=new XMLHttpRequest();
+    }
+    else{// code for IE6, IE5
+        xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+    }
+    xmlhttp.onreadystatechange=function(){
+        if (xmlhttp.readyState == 4 ){
+            if(xmlhttp.status == 200){
+                alert(xmlhttp.responseText);
+            }
+            else {
+                alert(xmlhttp.responseText);
+            }
+        };
+    }
+    xmlhttp.open("POST", cgiscript, true);
+    xmlhttp.setRequestHeader("Content-Type","application/json; charset=utf-8;");
+    xmlhttp.send(info);
+}
+</script>
 <body>
 hello my webserver.
 
 <p><a href="pages/中文页面.html">文件名是中文的网页 测试url_decode</a></p>
+
+<input type="button" value="测试POST方法执行cgiscript" onclick="ajax_post('cgibin/cgicpp', 'test')" />
 
 </body>
 

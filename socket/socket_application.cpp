@@ -13,7 +13,7 @@ VOID CSocketApplication::startup()
 {
     if(NULL != m_reqtype)
     {
-        if(m_reqtype->initialize(ip, port, m_block))
+        if(m_reqtype->initialize(m_ip, m_port, m_block))
         {
             working();  // working一般都会有个循环在一直执行
         }

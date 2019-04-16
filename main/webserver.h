@@ -3,6 +3,7 @@
 
 #include "socket_request_httpserver.h"
 #include "socket_application_select.h"
+#include "socket_application_epoll.h"
 
 
 // webserver请求类 继承http请求类
@@ -19,5 +20,11 @@ public:
     CWebServerSelect(STRING serverip, WORD16 serverport, CWebServerRequst* req) : CSocketApplicationSelect(serverip, serverport, req){}
 };
 
+// webserver应用类 继承select模式
+class CWebServerEpoll : public CSocketApplicationEpoll
+{
+public:
+    CWebServerEpoll(STRING serverip, WORD16 serverport, CWebServerRequst* req) : CSocketApplicationEpoll(serverip, serverport, req){}
+};
 
 #endif

@@ -12,14 +12,14 @@ typedef map<SOCKFD, CSocketRequest*>    REQUESTMAP;
 class CSocketApplication
 {
 public:
-    CSocketApplication(CSocketRequest* req) : m_reqtype(req) {}
+    CSocketApplication(STRING ip, WORD16 port, CSocketRequest* req) : m_reqtype(req), m_ip(ip), m_port(port), m_block(FALSE) {}
     virtual ~CSocketApplication();
     virtual VOID startup();
 protected:
     virtual VOID working() = 0;
     CSocketRequest*  m_reqtype;  // 请求原型 (使用原型模式)
-    STRING ip;
-    WORD16 port;
+    STRING m_ip;
+    WORD16 m_port;
     BOOL   m_block;
 private:
 };

@@ -3,21 +3,17 @@
 
 #include "socket_application.h"
 
-//单线程 单连接 非阻塞 select模式
+//单线程 非阻塞 select模式
 class CSocketApplicationSelect : public CSocketApplication
 {
 public:
-    CSocketApplicationSelect(STRING serverip, WORD16 serverport, CSocketRequest* req) : CSocketApplication(req)
-    {
-        ip    = serverip;
-        port  = serverport;
-        m_block = FALSE;      //select模式使用非阻塞socket
-    }    
+    CSocketApplicationSelect(STRING serverip, WORD16 serverport, CSocketRequest* req) :\
+                             CSocketApplication(serverip, serverport, req){}
 protected:
     virtual VOID working();
     virtual VOID select_fdset();
     virtual VOID select_self();
-    virtual VOID select_peer(); 
+    virtual VOID select_peer();
 private:
     SOCKFD      m_maxfd;
     fd_set      m_readset;

@@ -29,6 +29,21 @@ VOID CHttpServerRequest::show_respinfo()
     SOCKET_TRACE("--------------------------------------------\n");
 }
 
+VOID CHttpServerRequest::reset_reqinfo()
+{
+    m_rcvstat = HTTP_RECV_REQLINE;
+    m_method.clear();
+    m_requrl.clear();
+    m_version.clear();
+    m_reqfile.clear();
+    m_query.clear();
+    m_headers.clear();
+    m_reqbody.clear();
+    m_bodylen = 0;
+    m_respstat.clear();
+    m_respmime.clear();
+}
+
 
 /* 接收一次http请求，结构如下
    请求行     reqline  方法 空格 URL 空格 协议版本
@@ -128,7 +143,6 @@ BOOL CHttpServerRequest::receive_reqbody()
     {
         if(getsize(m_rbuff, m_reqbody, m_bodylen))
         {
-            m_rcvstat = HTTP_RECV_REQLINE;
             return TRUE;
         }
     }
@@ -153,6 +167,7 @@ BOOL CHttpServerRequest::process()
         m_respstat = HTTP_RESPONSE_VERSION + "501 Not Implemented";
         response(m_method + " Not Implement");
     }
+    reset_reqinfo(); //重置http请求的信息 准备接收下一次请求
     show_respinfo();
     return TRUE;
 }
@@ -324,30 +339,30 @@ VOID CHttpServerRequest::process_cgiscript_setallenv()
     /*
     cgiscript环境变量名称        说明
     REQUEST_METHOD        请求类型，如“GET”或“POST”
-    CONTENT_TYPE         被发送数据的类型
+    CONTENT_TYPE          被发送数据的类型
     CONTENT_LENGTH        客户端向标准输入设备发送的数据长度，单位为字节
-    QUERY_STRING        查询参数，如“id=10010&sn=liigo”
-    SCRIPT_NAME         cgiscript脚本程序名称
+    QUERY_STRING          查询参数，如“id=10010&sn=liigo”
+    SCRIPT_NAME           cgiscript脚本程序名称
     PATH_INFO             cgiscript脚本程序附加路径
-    PATH_TRANSLATED     PATH_INFO对应的绝对路径
-    REMOTE_ADDR         发送此次请求的主机IP
-    REMOTE_HOST         发送此次请求的主机名
-    REMOTE_USER         已被验证合法的用户名
-    REMOTE_IDENT         WEB服务器的登录用户名
+    PATH_TRANSLATED       PATH_INFO对应的绝对路径
+    REMOTE_ADDR           发送此次请求的主机IP
+    REMOTE_HOST           发送此次请求的主机名
+    REMOTE_USER           已被验证合法的用户名
+    REMOTE_IDENT          WEB服务器的登录用户名
     AUTH_TYPE             验证类型
     GATEWAY_INTERFACE     服务器遵守的cgiscript版本，如：cgiscript/1.1
-    SERVER_NAME         服务器主机名、域名或IP
-    SERVER_PORT         服务器端口号
-    SERVER_PROTOCOL     服务器协议，如：HTTP/1.1
+    SERVER_NAME           服务器主机名、域名或IP
+    SERVER_PORT           服务器端口号
+    SERVER_PROTOCOL       服务器协议，如：HTTP/1.1
     DOCUMENT_ROOT         文档根目录
-    SERVER_SOFTWARE     服务器软件的描述文本
-    HTTP_ACCEPT         客户端可以接收的MIME类型，以逗号分隔
-    HTTP_USER_AGENT     发送此次请求的web浏览器
-    HTTP_REFERER         调用此脚本程序的文档
-    HTTP_COOKIE            获取COOKIE键值对，多项之间以分号分隔，如：key1=value1;key2=value2
+    SERVER_SOFTWARE       服务器软件的描述文本
+    HTTP_ACCEPT           客户端可以接收的MIME类型，以逗号分隔
+    HTTP_USER_AGENT       发送此次请求的web浏览器
+    HTTP_REFERER          调用此脚本程序的文档
+    HTTP_COOKIE           获取COOKIE键值对，多项之间以分号分隔，如：key1=value1;key2=value2
     */
     process_cgiscript_setoneenv("REQUEST_METHOD",   m_method);
-    process_cgiscript_setoneenv("CONTENT_TYPE",     m_reqinfo["Content-Type"]);
+    process_cgiscript_setoneenv("CONTENT_TYPE",     m_headers["Content-Type"]);
     process_cgiscript_setoneenv("CONTENT_LENGTH",   m_bodylen);
     process_cgiscript_setoneenv("QUERY_STRING",     m_query);
     process_cgiscript_setoneenv("SCRIPT_NAME",      m_reqfile);
@@ -357,10 +372,10 @@ VOID CHttpServerRequest::process_cgiscript_setallenv()
     process_cgiscript_setoneenv("SERVER_PROTOCOL",  HTTP_RESPONSE_VERSION);
     process_cgiscript_setoneenv("DOCUMENT_ROOT",    m_rootdir);
     process_cgiscript_setoneenv("SERVER_SOFTWARE",  HTTP_RESPONSE_SERVER);
-    process_cgiscript_setoneenv("HTTP_ACCEPT",      m_reqinfo["Accept"]);
-    process_cgiscript_setoneenv("HTTP_USER_AGENT",  m_reqinfo["User-Agent"]);
-    process_cgiscript_setoneenv("HTTP_REFERER",     m_reqinfo["Referer"]);
-    process_cgiscript_setoneenv("HTTP_COOKIE",      m_reqinfo["Cookie"]);
+    process_cgiscript_setoneenv("HTTP_ACCEPT",      m_headers["Accept"]);
+    process_cgiscript_setoneenv("HTTP_USER_AGENT",  m_headers["User-Agent"]);
+    process_cgiscript_setoneenv("HTTP_REFERER",     m_headers["Referer"]);
+    process_cgiscript_setoneenv("HTTP_COOKIE",      m_headers["Cookie"]);
 }
 
 
@@ -387,6 +402,7 @@ VOID CHttpServerRequest::process_cgiscript_runcgi()
               NULL);
     }
 }
+
 
 
 

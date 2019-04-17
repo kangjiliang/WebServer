@@ -77,8 +77,7 @@ BOOL CTcpServerRequest::receive()
         STRING line;
         if(getline(m_rbuff, line))
         {
-            m_reqinfo["oneline"] = line;
-            return TRUE;
+            cout << "recv: " << line << endl;
         }
         return FALSE;
     }
@@ -101,11 +100,6 @@ BOOL CTcpServerRequest::dispatch()
 // Tcpserver处理接收到的数据 打印接收到的一行
 BOOL CTcpServerRequest::process()
 {
-    if(m_reqinfo.end() != m_reqinfo.find("oneline"))
-    {
-        cout << m_reqinfo["oneline"] << endl;
-        m_sbuff.append(m_reqinfo["oneline"]);
-    }
     return TRUE;
 }
 

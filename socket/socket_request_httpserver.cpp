@@ -25,7 +25,7 @@ VOID CHttpServerRequest::show_reqinfo()
 VOID CHttpServerRequest::show_respinfo()
 {
     SOCKET_TRACE("--------------------------------------------\n");
-    SOCKET_TRACE("%s\n", m_sbuff.c_str());
+    SOCKET_TRACE("%s\n", m_sockaddr.sbuff.c_str());
     SOCKET_TRACE("--------------------------------------------\n");
 }
 
@@ -53,7 +53,7 @@ VOID CHttpServerRequest::reset_reqinfo()
 */
 BOOL CHttpServerRequest::receive()
 {
-    if(recvinfo(m_paddr.fd, m_rbuff))
+    if(recvinfo(m_sockaddr.fd, m_sockaddr.rbuff))
     {
         receive_reqline();
         receive_headers();
@@ -61,7 +61,7 @@ BOOL CHttpServerRequest::receive()
     }
     else
     {
-        m_paddr.closefd();
+        m_sockaddr.closefd();
         return FALSE;
     }
 }
@@ -72,7 +72,7 @@ BOOL CHttpServerRequest::receive_reqline()
     if(HTTP_RECV_REQLINE == m_rcvstat)
     {
         STRING line;
-        if(getline(m_rbuff, line))
+        if(getline(m_sockaddr.rbuff, line))
         {
             STRVEC strvec;
             strsplit(line, " ", strvec);
@@ -108,7 +108,7 @@ BOOL CHttpServerRequest::receive_headers()
     if(HTTP_RECV_HEADERS == m_rcvstat)
     {
         STRING line;
-        if(!getline(m_rbuff, line))
+        if(!getline(m_sockaddr.rbuff, line))
         {
             return FALSE;
         }
@@ -141,7 +141,7 @@ BOOL CHttpServerRequest::receive_reqbody()
 {
     if(HTTP_RECV_REQBODY == m_rcvstat)
     {
-        if(getsize(m_rbuff, m_reqbody, m_bodylen))
+        if(getsize(m_sockaddr.rbuff, m_reqbody, m_bodylen))
         {
             return TRUE;
         }
@@ -175,24 +175,24 @@ BOOL CHttpServerRequest::process()
 //响应一次http请求
 VOID CHttpServerRequest::response(const CHAR* info, WORD64 size)
 {
-    m_sbuff.append(m_respstat);
-    m_sbuff.append("\r\n");
+    m_sockaddr.sbuff.append(m_respstat);
+    m_sockaddr.sbuff.append("\r\n");
 
-    m_sbuff.append("SERVER: ");
-    m_sbuff.append(HTTP_RESPONSE_SERVER);
-    m_sbuff.append("\r\n");
+    m_sockaddr.sbuff.append("SERVER: ");
+    m_sockaddr.sbuff.append(HTTP_RESPONSE_SERVER);
+    m_sockaddr.sbuff.append("\r\n");
 
-    m_sbuff.append("Content-Type: ");
-    m_sbuff.append(m_respmime);
-    m_sbuff.append("\r\n");
+    m_sockaddr.sbuff.append("Content-Type: ");
+    m_sockaddr.sbuff.append(m_respmime);
+    m_sockaddr.sbuff.append("\r\n");
 
-    m_sbuff.append("Content-Length: ");
+    m_sockaddr.sbuff.append("Content-Length: ");
     SSTREAM sslength;
     sslength << size;
-    m_sbuff.append(sslength.str());
-    m_sbuff.append("\r\n\r\n");
+    m_sockaddr.sbuff.append(sslength.str());
+    m_sockaddr.sbuff.append("\r\n\r\n");
 
-    m_sbuff.append(info, size);
+    m_sockaddr.sbuff.append(info, size);
 }
 
 VOID CHttpServerRequest::response(const STRING& info)
@@ -317,7 +317,7 @@ VOID CHttpServerRequest::process_cgiscript_readresponse(FILEFD fd)
     CHAR  ch;
     while(0 < read(fd, &ch, 1))
     {
-        m_sbuff.append(1, ch);
+        m_sockaddr.sbuff.append(1, ch);
     }
 }
 
@@ -366,9 +366,9 @@ VOID CHttpServerRequest::process_cgiscript_setallenv()
     process_cgiscript_setoneenv("CONTENT_LENGTH",   m_bodylen);
     process_cgiscript_setoneenv("QUERY_STRING",     m_query);
     process_cgiscript_setoneenv("SCRIPT_NAME",      m_reqfile);
-    process_cgiscript_setoneenv("REMOTE_ADDR",      m_paddr.ip);
-    process_cgiscript_setoneenv("SERVER_NAME",      m_saddr.addr());
-    process_cgiscript_setoneenv("SERVER_PORT",      m_saddr.port);
+    process_cgiscript_setoneenv("REMOTE_ADDR",      m_sockaddr.ip);
+    process_cgiscript_setoneenv("SERVER_NAME",      m_sockaddr.selfaddr());
+    process_cgiscript_setoneenv("SERVER_PORT",      m_sockaddr.port);
     process_cgiscript_setoneenv("SERVER_PROTOCOL",  HTTP_RESPONSE_VERSION);
     process_cgiscript_setoneenv("DOCUMENT_ROOT",    m_rootdir);
     process_cgiscript_setoneenv("SERVER_SOFTWARE",  HTTP_RESPONSE_SERVER);
@@ -390,8 +390,8 @@ VOID CHttpServerRequest::process_cgiscript_runcgi()
     strsplit(m_reqfile, ".", strvec);
     if(1 < strvec.size() && "py" == strvec[strvec.size() - 1])
     {
-        execl("/usr/bin/python",
-              "/usr/bin/python",
+        execl(HTTP_CGISCRIPT_PYTHON,
+              HTTP_CGISCRIPT_PYTHON,
               m_reqfile.c_str(),
               NULL);
     }

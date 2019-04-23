@@ -7,7 +7,7 @@ VOID* CSocketApplicationMultiThread::callback(VOID* args)
     CSocketRequest* req = (CSocketRequest*)args;
     while(NULL != req)
     {
-        if(INVALIDFD != req->peerfd())
+        if(INVALIDFD != req->fd())
         {
             if(req->receive())   //没有新数据发来 会阻塞
             {

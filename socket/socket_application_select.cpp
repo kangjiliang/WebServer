@@ -43,7 +43,7 @@ VOID CSocketApplicationSelect::select_fdset()
         CSocketRequest* req = *it;
         if(NULL != req)
         {
-            peerfd = req->peerfd();
+            peerfd = req->fd();
             if(INVALIDFD != peerfd)
             {
                 //设置可读fdset
@@ -61,7 +61,7 @@ VOID CSocketApplicationSelect::select_fdset()
     // 其他类型的 如tcpclient udp之类的 selffd为无效值
     if(NULL != m_reqtype)
     {
-        selffd = m_reqtype->selffd();
+        selffd = m_reqtype->fd();
         if(INVALIDFD != selffd)
         {
             FD_SET(selffd, &m_readset);
@@ -72,7 +72,7 @@ VOID CSocketApplicationSelect::select_fdset()
 
 VOID CSocketApplicationSelect::select_self()
 {
-    SOCKFD fd = m_reqtype->selffd();
+    SOCKFD fd = m_reqtype->fd();
     if(INVALIDFD != fd && FD_ISSET(fd, &m_readset))
     {
         CSocketRequest* req = m_reqtype->clone();
@@ -103,7 +103,7 @@ VOID CSocketApplicationSelect::select_peer()
         CSocketRequest* req = *it;
         if(NULL != req)
         {
-            SOCKFD peerfd = req->peerfd();
+            SOCKFD peerfd = req->fd();
             if(INVALIDFD != peerfd)
             {
                 //如果socket可读 则调用接收接口 接收成功则进行处理

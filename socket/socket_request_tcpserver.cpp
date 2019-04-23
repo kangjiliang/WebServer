@@ -38,7 +38,7 @@ BOOL CTcpServerRequest::initialize(const STRING& ip, const WORD16& port, const B
         close(fd);
         return FALSE;
     }
-    m_saddr.setaddr(fd, ip, port, block);
+    m_sockaddr.setaddr(fd, ip, port, block);
     return TRUE;
 }
 
@@ -48,7 +48,7 @@ BOOL CTcpServerRequest::activate(const BOOL& block)
     SOCKFD     sockfd = -1;
     SOCKADDRIN addrin = {0};
     WORD32     addlen = sizeof(addrin);
-    SOCKFD     servfd = m_saddr.fd;
+    SOCKFD     servfd = m_sockaddr.fd;
 
     if(INVALIDFD == servfd)
     {
@@ -63,8 +63,8 @@ BOOL CTcpServerRequest::activate(const BOOL& block)
     }
     else
     {
-        m_paddr.setaddr(sockfd, inet_ntoa(addrin.sin_addr), ntohs(addrin.sin_port), block);
-        SOCKET_TRACE("accept from: %s\n", m_paddr.addr().c_str());
+        m_sockaddr.setaddr(sockfd, inet_ntoa(addrin.sin_addr), ntohs(addrin.sin_port), block);
+        SOCKET_TRACE("accept from: %s\n", m_sockaddr.peeraddr().c_str());
         return TRUE;
     }
 }
@@ -72,10 +72,10 @@ BOOL CTcpServerRequest::activate(const BOOL& block)
 // Tcpserver接收数据 读取到一行为成功 成功后转process去处理
 BOOL CTcpServerRequest::receive()
 {
-    if(recvinfo(m_paddr.fd, m_rbuff))
+    if(recvinfo(m_sockaddr.fd, m_sockaddr.rbuff))
     {
         STRING line;
-        if(getline(m_rbuff, line))
+        if(getline(m_sockaddr.rbuff, line))
         {
             cout << "recv: " << line << endl;
         }
@@ -83,16 +83,16 @@ BOOL CTcpServerRequest::receive()
     }
     else
     {
-        m_paddr.closefd();
+        m_sockaddr.closefd();
         return FALSE;
     }
 }
 // Tcpserver应答数据处理
 BOOL CTcpServerRequest::dispatch()
 {
-    if(!m_sbuff.empty())
+    if(!m_sockaddr.sbuff.empty())
     {
-        sendinfo(m_paddr.fd, m_sbuff);
+        sendinfo(m_sockaddr.fd, m_sockaddr.sbuff);
     }
     return TRUE;
 }

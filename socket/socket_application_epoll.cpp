@@ -21,7 +21,7 @@ VOID CSocketApplicationEpoll::working()
         return;
     }
 
-    epoll_setevent(EPOLLIN, m_reqtype->selffd(), m_reqtype, EPOLL_CTL_ADD);
+    epoll_setevent(EPOLLIN, m_reqtype->fd(), m_reqtype, EPOLL_CTL_ADD);
 
     while(NULL != m_reqtype)
     {
@@ -67,7 +67,7 @@ VOID CSocketApplicationEpoll::epoll_self(WORD32 events, CSocketRequest* req)
         {
             if(newreq->activate(m_block))
             {
-                epoll_setevent(EPOLLIN | EPOLLOUT, newreq->peerfd(), newreq, EPOLL_CTL_ADD);
+                epoll_setevent(EPOLLIN | EPOLLOUT, newreq->fd(), newreq, EPOLL_CTL_ADD);
             }
             else
             {
@@ -91,14 +91,14 @@ VOID CSocketApplicationEpoll::epoll_peer(WORD32 events, CSocketRequest* req)
         req->dispatch();
     }
 
-    if(INVALIDFD == req->peerfd())
+    if(INVALIDFD == req->fd())
     {
-        epoll_setevent(events, req->peerfd(), req, EPOLL_CTL_DEL);
+        epoll_setevent(events, req->fd(), req, EPOLL_CTL_DEL);
         delete req;
         return;
     }
 
     events = req->sbuffempty() ? EPOLLIN : (EPOLLIN | EPOLLOUT);
-    epoll_setevent(events, req->peerfd(), req, EPOLL_CTL_MOD);
+    epoll_setevent(events, req->fd(), req, EPOLL_CTL_MOD);
 }
 

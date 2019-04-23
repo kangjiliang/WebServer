@@ -83,14 +83,17 @@ typedef struct timeval            TIMEVAL;
 class CSocketAddress
 {
 public:
-    CSocketAddress() : fd(INVALIDFD), ip(), port(0) {}
-    STRING addr() const;
+    CSocketAddress() : fd(INVALIDFD), ip(), port(0), rbuff(), sbuff() {}
+    STRING selfaddr() const;
+    STRING peeraddr() const;
     VOID   noblock();
     VOID   setaddr(const SOCKFD& fd, const STRING& ip, const WORD16& port, const BOOL& block);
     VOID   closefd();
     SOCKFD fd;    // socket
     STRING ip;    // ip地址
     WORD16 port;  // 端口号
+    STRING rbuff; // 接收数据的buffer
+    STRING sbuff; // 发送数据的buffer
 };
 
 
@@ -98,12 +101,10 @@ public:
 class CSocketRequest
 {
 public:
-    CSocketRequest():m_rbuff(), m_sbuff(), m_saddr(), m_paddr(){}
+    CSocketRequest():m_sockaddr(){}
     virtual ~CSocketRequest(){}
-    SOCKFD selffd() {return m_saddr.fd;}
-    SOCKFD peerfd() {return m_paddr.fd;}
-    BOOL   sbuffempty() {return m_sbuff.empty();}
-
+    SOCKFD fd() {return m_sockaddr.fd;}
+    BOOL   sbuffempty() {return m_sockaddr.sbuff.empty();}
 
     virtual CSocketRequest* clone() = 0;
     virtual BOOL  initialize(const STRING& ip, const WORD16& port, const BOOL& block) = 0;
@@ -112,10 +113,7 @@ public:
     virtual BOOL  dispatch() = 0;
     virtual BOOL  process() = 0;
 protected:
-    STRING         m_rbuff;  //接收数据的buffer
-    STRING         m_sbuff;  //发送数据的buffer
-    CSocketAddress m_saddr;  //本端地址
-    CSocketAddress m_paddr;  //对端地址
+    CSocketAddress m_sockaddr;  //本端地址
 };
 
 

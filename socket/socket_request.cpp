@@ -1,11 +1,24 @@
 #include "socket_request.h"
 
 //返回 ip地址:端口号:socket 格式的字符串
-STRING CSocketAddress::addr() const
+STRING CSocketAddress::selfaddr() const
 {
-    SSTREAM addr;
-    addr << ip << ":" << port << ":" << fd;
-    return addr.str();
+    SOCKADDRIN addr;
+    WORD32     size = sizeof(addr);
+    getsockname(fd, (SOCKADDR*)&addr, &size);
+    SSTREAM ssaddr;
+    ssaddr << inet_ntoa(addr.sin_addr) << ":" << ntohs(addr.sin_port) << ":" << fd;
+    return ssaddr.str();
+}
+
+STRING CSocketAddress::peeraddr() const
+{
+    SOCKADDRIN addr;
+    WORD32     size = sizeof(addr);
+    getpeername(fd, (SOCKADDR*)&addr, &size);
+    SSTREAM ssaddr;
+    ssaddr << inet_ntoa(addr.sin_addr) << ":" << ntohs(addr.sin_port) << ":" << fd;
+    return ssaddr.str();
 }
 
 //设置socket为非阻塞
@@ -23,6 +36,7 @@ VOID CSocketAddress::setaddr(const SOCKFD& fd, const STRING& ip, const WORD16& p
     if(INVALIDFD == this->fd)
     {
         SOCKET_TRACE("INVALIDFD == fd\n");
+        return;
     }
     if(!block)
     {
@@ -35,7 +49,7 @@ VOID CSocketAddress::closefd()
 {
     if(INVALIDFD != fd)
     {
-        SOCKET_TRACE("disconnect: %s\n", addr().c_str());
+        SOCKET_TRACE("disconnect: %s\n", peeraddr().c_str());
         close(fd);
         fd = INVALIDFD;
     }

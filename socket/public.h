@@ -25,6 +25,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <queue>
 #include <list>
 #include <map>
 
@@ -67,6 +68,8 @@ typedef int                       PSTAT;
 typedef time_t                    TIMET;
 typedef tm                        TIMETM;
 typedef struct timeval            TIMEVAL;
+/*------------------------------------------------*/
+typedef VOID* (*FUNCPTR)(VOID* param);
 /*------------------------------------------------*/
 #define TRUE                      (1)
 #define FALSE                     (0)

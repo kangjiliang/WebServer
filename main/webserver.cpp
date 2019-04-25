@@ -3,6 +3,6 @@
 int main()
 {
     CWebServerRequst* webreq = new CWebServerRequst("./");
-    CWebServerEpoll webserver("0.0.0.0", 8888, webreq);
+    CWebServerThreadPool webserver("0.0.0.0", 8888, webreq);
     webserver.startup();
 }

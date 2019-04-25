@@ -1,5 +1,5 @@
-#ifndef _SOCKET_REQUEST_HTTP_H
-#define _SOCKET_REQUEST_HTTP_H
+#ifndef _SOCKET_REQUEST_HTTPSERVER_H
+#define _SOCKET_REQUEST_HTTPSERVER_H
 
 #include "socket_request_tcpserver.h"
 

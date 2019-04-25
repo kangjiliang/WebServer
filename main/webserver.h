@@ -6,6 +6,7 @@
 #include "socket_application_select.h"
 #include "socket_application_epoll.h"
 #include "socket_application_multithread.h"
+#include "socket_application_threadpool.h"
 
 // webserver请求类 继承websocket类
 class CWebServerRequst : public CWebSocketRequest
@@ -35,5 +36,13 @@ class CWebServerMultiThread : public CSocketApplicationMultiThread
 public:
     CWebServerMultiThread(STRING serverip, WORD16 serverport, CWebServerRequst* req) : CSocketApplicationMultiThread(serverip, serverport, req){}
 };
+
+// webserver应用类 继承多线程模式
+class CWebServerThreadPool : public CSocketApplicationThreadPool
+{
+public:
+    CWebServerThreadPool(STRING serverip, WORD16 serverport, CWebServerRequst* req) : CSocketApplicationThreadPool(10, serverip, serverport, req){}
+};
+
 
 #endif

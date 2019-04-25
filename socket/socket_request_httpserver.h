@@ -15,7 +15,7 @@ enum HTTP_RECV_STATUS
 const STRING HTTP_RESPONSE_VERSION = "HTTP/1.1 ";
 const STRING HTTP_RESPONSE_SERVER  = "httpserver/kangjiliang-117470154@qq.com";
 
-const CHAR* HTTP_CGISCRIPT_PYTHON = "/usr/bin/python";
+const STRING HTTP_CGISCRIPT_PYTHON = "/usr/bin/python";
 
 class CHttpServerRequest : public CTcpServerRequest
 {

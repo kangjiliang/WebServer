@@ -390,8 +390,8 @@ VOID CHttpServerRequest::process_cgiscript_runcgi()
     strsplit(m_reqfile, ".", strvec);
     if(1 < strvec.size() && "py" == strvec[strvec.size() - 1])
     {
-        execl(HTTP_CGISCRIPT_PYTHON,
-              HTTP_CGISCRIPT_PYTHON,
+        execl(HTTP_CGISCRIPT_PYTHON.c_str(),
+              HTTP_CGISCRIPT_PYTHON.c_str(),
               m_reqfile.c_str(),
               NULL);
     }

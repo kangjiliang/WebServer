@@ -10,6 +10,8 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/epoll.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/wait.h>
@@ -68,6 +70,9 @@ typedef int                       PSTAT;
 typedef time_t                    TIMET;
 typedef tm                        TIMETM;
 typedef struct timeval            TIMEVAL;
+/*------------------------------------------------*/
+typedef key_t                     MQKEY;
+typedef long                      MQMSGTYPE;
 /*------------------------------------------------*/
 typedef VOID* (*FUNCPTR)(VOID* param);
 /*------------------------------------------------*/

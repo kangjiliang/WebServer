@@ -4,6 +4,7 @@
 
 #include "public.h"
 
+
 // 定义socket地址类 封装socket ip port
 class CSocketAddress
 {
@@ -14,6 +15,7 @@ public:
     VOID   noblock();
     VOID   setaddr(const SOCKFD& fd, const STRING& ip, const WORD16& port, const BOOL& block);
     VOID   closefd();
+
     SOCKFD fd;    // socket
     STRING ip;    // ip地址
     WORD16 port;  // 端口号
@@ -41,6 +43,11 @@ protected:
     CSocketAddress m_sockaddr;  //本端地址
 };
 
+#define SOCKET_REQUEST_CLONE(classname) \
+virtual CSocketRequest* clone() \
+{\
+    return new classname(*this); \
+}
 
 BOOL recvinfo(const SOCKFD& fd, STRING& info);
 BOOL sendinfo(const SOCKFD& fd, STRING& info);

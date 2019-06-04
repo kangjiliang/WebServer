@@ -10,7 +10,7 @@ const SWORD32 SOCKET_TCPSERVER_LISTEN_BACKLOG = 10;
 class CTcpServerRequest : public CSocketRequest
 {
 public:
-    virtual CSocketRequest* clone();
+    SOCKET_REQUEST_CLONE(CTcpServerRequest)
     virtual BOOL initialize(const STRING& ip, const WORD16& port, const BOOL& block);
     virtual BOOL activate(const BOOL& block);
     virtual BOOL receive();

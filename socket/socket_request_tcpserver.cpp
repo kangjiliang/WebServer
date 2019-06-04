@@ -1,11 +1,6 @@
 #include "socket_request_tcpserver.h"
 
 
-CSocketRequest* CTcpServerRequest::clone()
-{
-    return new CTcpServerRequest(*this);
-}
-
 // Tcpserver初始化 封装socket bind listen
 BOOL CTcpServerRequest::initialize(const STRING& ip, const WORD16& port, const BOOL& block)
 {

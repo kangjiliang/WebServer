@@ -1,12 +1,6 @@
 #include "socket_request_websocket.h"
 #include "codec.h"
 
-CSocketRequest* CWebSocketRequest::clone()
-{
-    return new CWebSocketRequest(*this);
-}
-
-
 /*------------------ WebSocket 帧头 ----------------------------+
 |0               1               2               3              |
 |0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7|

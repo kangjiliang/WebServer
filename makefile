@@ -1,20 +1,23 @@
-SOURCES = $(wildcard ./socket/*.cpp) \
-		  $(wildcard ./main/*.cpp)
+
 
 INCLUDE = -I./socket \
-		  -I./main
+		  -I./main \
+		  -I./public \
+		  -I./codec
 
 CXX     = g++
-LIBS    = -lpthread
 FLAGS   = -Wall -g
-TARGET  = webserver
 
+##### webserver
+WEBSOURCE = $(wildcard ./main/*.cpp) $(wildcard ./socket/*.cpp) $(wildcard ./codec/*.cpp)
+WEBTARGET = webserver
+WEBLIBS   = -lpthread
 
-.PHONY: $(TARGET)
+.PHONY: $(WEBTARGET)
 
-$(TARGET):
-	$(CXX) -o $(TARGET) $(SOURCES) $(INCLUDE) $(FLAGS) $(LIBS)
+$(WEBTARGET):
+	$(CXX) -o $(WEBTARGET) $(WEBSOURCE) $(WEBLIBS) $(INCLUDE) $(FLAGS)
 
 clean:
-	rm -rf $(TARGET)
+	rm -rf $(WEBTARGET)
 

@@ -17,8 +17,8 @@ class CWebSocketRequest : public CHttpServerRequest
 {
 public:
     CWebSocketRequest(STRING rootdir) : CHttpServerRequest(rootdir){}
+    SOCKET_REQUEST_CLONE(CWebSocketRequest)
 
-    virtual CSocketRequest*  clone();
     virtual BOOL receive();
     virtual BOOL process();
 

@@ -23,10 +23,7 @@ public:
     CHttpServerRequest(STRING rootdir) : CTcpServerRequest(), m_rootdir(rootdir), m_rcvstat(HTTP_RECV_REQLINE), m_method(),
         m_requrl(), m_version(), m_reqfile(), m_query(), m_headers(), m_reqbody(), m_bodylen(0),
         m_respstat(), m_respmime("text/html") {}
-
-    virtual CSocketRequest* clone();
-    virtual BOOL receive();
-    virtual BOOL process();
+    SOCKET_REQUEST_CLONE(CHttpServerRequest)
 
     VOID show_reqinfo();
     VOID show_respinfo();
@@ -41,8 +38,13 @@ public:
     VOID response_file(const STRING& name, const FILEST& state);
     VOID response_path(const STRING& path);
 
-    VOID process_GET();
-    VOID process_POST();
+    virtual STRING decodeurl(const STRING& url) {return url;}
+    virtual VOID process_GET();
+    virtual VOID process_POST();
+    virtual BOOL receive();
+    virtual BOOL process();
+
+
     VOID process_cgiscript();
     VOID process_cgiscript_writereqbody(FILEFD fd, const STRING& reqbody);
     VOID process_cgiscript_readresponse(FILEFD fd);

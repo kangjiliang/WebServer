@@ -1,11 +1,5 @@
 #include "socket_request_httpserver.h"
-#include "codec.h"
 
-
-CSocketRequest* CHttpServerRequest::clone()
-{
-    return new CHttpServerRequest(*this);
-}
 
 //显示http请求的信息
 VOID CHttpServerRequest::show_reqinfo()
@@ -79,7 +73,7 @@ BOOL CHttpServerRequest::receive_reqline()
             if(strvec.size() > 2)
             {
                 m_method  = strvec[0];
-                m_requrl  = url_decode(strvec[1]); //对url进行解码
+                m_requrl  = decodeurl(strvec[1]); //对url进行解码
                 m_version = strvec[2];
                 //URL结构 <scheme>://<user>:<password>@<host>:<port>/<path>;<params>?<query>#<frag>
                 STRVEC urlvec;

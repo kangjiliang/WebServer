@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" href="js/zTree/css/zTreeStyle/zTreeStyle.css" type="text/css">
+<script type="text/javascript" src="js/zTree/js/jquery-1.4.4.min.js"></script>
+<script type="text/javascript" src="js/zTree/js/jquery.ztree.all.min.js"></script>
+<script type="text/javascript" src="js/webztree.js"></script>
+<script type="text/javascript">
+    var setting = {
+        data: {
+            simpleData: {
+                enable: true
+            }
+        }
+    };
+    var zNodes =[
+        { id:"01", pId:"0", name:"父节点1 - 展开", open:true},
+            { id:"0101", pId:"01", name:"父节点11 - 折叠"},
+        { id:"02", pId:"0", name:"DEBUG", open:true, url:"/pages/debug.html", target:"main"},
+    ];
+
+    $(document).ready(function(){
+        $.fn.zTree.init($("#ZTREE_INDEX_LIST"), setting, zNodes);
+    });
+</script>
+</HEAD>
+
+<BODY>
+
+<div><ul id="ZTREE_INDEX_LIST" class="ztree"></ul></div>
+
+</BODY>
+</HTML>

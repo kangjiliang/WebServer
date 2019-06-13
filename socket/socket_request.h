@@ -1,37 +1,38 @@
 #ifndef _SOCKET_REQUEST_H
 #define _SOCKET_REQUEST_H
 
-
 #include "public.h"
 
 
-// 定义socket地址类 封装socket ip port
-class CSocketAddress
+class CSocketReceiver
 {
 public:
-    CSocketAddress() : fd(INVALIDFD), ip(), port(0), rbuff(), sbuff() {}
-    STRING selfaddr() const;
-    STRING peeraddr() const;
-    VOID   noblock();
-    VOID   setaddr(const SOCKFD& fd, const STRING& ip, const WORD16& port, const BOOL& block);
-    VOID   closefd();
-
-    SOCKFD fd;    // socket
-    STRING ip;    // ip地址
-    WORD16 port;  // 端口号
-    STRING rbuff; // 接收数据的buffer
-    STRING sbuff; // 发送数据的buffer
+    virtual ~CSocketReceiver(){}
+    virtual CSocketReceiver* clone() = 0;
+    virtual WORD32 recvmessage(const SOCKFD& fd, STRMAP& info) = 0;
 };
-
 
 // 定义socket请求基类
 class CSocketRequest
 {
 public:
-    CSocketRequest():m_sockaddr(){}
-    virtual ~CSocketRequest(){}
-    SOCKFD fd() {return m_sockaddr.fd;}
-    BOOL   sbuffempty() {return m_sockaddr.sbuff.empty();}
+    CSocketRequest():m_fd(INVALIDFD), m_rbuff(), m_sbuff(), m_reqinfo(), m_receiver(NULL){}
+    virtual ~CSocketRequest()
+    {
+        if(m_receiver)
+        {
+            delete m_receiver;
+        }
+    }
+    SOCKFD  fd() {return m_fd;}
+    BOOL    sbuffempty() {return m_sbuff.empty();}
+    STRING  selfip() const;
+    STRING  peerip() const;
+    STRING  selfport() const;
+    STRING  selfaddr() const;
+    STRING  peeraddr() const;
+    VOID    closefd();
+    VOID    setreceiver(CSocketReceiver* receiver) {m_receiver = receiver;}
 
     virtual CSocketRequest* clone() = 0;
     virtual BOOL  initialize(const STRING& ip, const WORD16& port, const BOOL& block) = 0;
@@ -40,13 +41,28 @@ public:
     virtual BOOL  dispatch() = 0;
     virtual BOOL  process() = 0;
 protected:
-    CSocketAddress m_sockaddr;  //本端地址
+    SOCKFD  m_fd;
+    STRING  m_rbuff;
+    STRING  m_sbuff;
+    STRMAP  m_reqinfo;
+    CSocketReceiver* m_receiver;
 };
+
+#define SOCKET_RECEIVER_CLONE(classname) \
+virtual CSocketReceiver* clone() \
+{\
+    return new classname(*this);\
+}
 
 #define SOCKET_REQUEST_CLONE(classname) \
 virtual CSocketRequest* clone() \
 {\
-    return new classname(*this); \
+    CSocketRequest* req = new classname(*this);\
+    if(req && m_receiver)\
+    {\
+        req->setreceiver(m_receiver->clone());\
+    }\
+    return req; \
 }
 
 BOOL recvinfo(const SOCKFD& fd, STRING& info);

@@ -1,5 +1,5 @@
-#ifndef _PUBLIC_H
-#define _PUBLIC_H
+#ifndef _SOCKET_PUBLIC_H
+#define _SOCKET_PUBLIC_H
 
 
 #include <stdio.h>
@@ -30,24 +30,33 @@
 #include <queue>
 #include <list>
 #include <map>
+#if __cplusplus >= 201103L
+#include <unordered_map>
+#endif
+
 
 using namespace std;
 
 
+
 /* 重定义一些数据类型 */
 /*------------------------------------------------*/
-typedef void                      VOID;
-typedef char                      CHAR;
-typedef uint8_t                   BYTE;
-typedef uint8_t                   BOOL;
-typedef uint16_t                  WORD16;
-typedef uint32_t                  WORD32;
-typedef uint64_t                  WORD64;
-typedef int32_t                   SWORD32;
-typedef stringstream              SSTREAM;
-typedef std::string               STRING;
-typedef std::vector<string>       STRVEC;
-typedef std::map<string, string>  STRMAP;
+typedef void                           VOID;
+typedef char                           CHAR;
+typedef uint8_t                        BYTE;
+typedef uint8_t                        BOOL;
+typedef uint16_t                       WORD16;
+typedef uint32_t                       WORD32;
+typedef uint64_t                       WORD64;
+typedef int32_t                        SWORD32;
+typedef stringstream                   SSTREAM;
+typedef std::string                    STRING;
+typedef std::vector<string>            STRVEC;
+#if __cplusplus >= 201103L
+typedef unordered_map<string, string>  STRMAP;
+#else
+typedef std::map<string, string>       STRMAP;
+#endif
 /*------------------------------------------------*/
 typedef int                       SOCKFD;
 typedef struct sockaddr_in        SOCKADDRIN;
@@ -86,5 +95,13 @@ typedef VOID* (*FUNCPTR)(VOID* param);
 /*------------------------------------------------*/
 #define SOCKET_TRACE              printf
 /*------------------------------------------------*/
+enum SOCKET_RECEIVE_RESULT
+{
+    SOCKET_RECEIVE_ERROR,
+    SOCKET_RECEIVE_NOTENOUGH,
+    SOCKET_RECEIVE_SUCCESS,
+};
+
+
 
 #endif

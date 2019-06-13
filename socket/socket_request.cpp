@@ -1,57 +1,61 @@
 #include "socket_request.h"
 
+
+STRING CSocketRequest::selfip() const
+{
+    SOCKADDRIN addr;
+    WORD32     size = sizeof(addr);
+    getsockname(m_fd, (SOCKADDR*)&addr, &size);
+    return STRING(inet_ntoa(addr.sin_addr));
+}
+
+STRING CSocketRequest::peerip() const
+{
+    SOCKADDRIN addr;
+    WORD32     size = sizeof(addr);
+    getpeername(m_fd, (SOCKADDR*)&addr, &size);
+    return STRING(inet_ntoa(addr.sin_addr));
+}
+
+STRING CSocketRequest::selfport() const
+{
+    SOCKADDRIN addr;
+    WORD32     size = sizeof(addr);
+    getsockname(m_fd, (SOCKADDR*)&addr, &size);
+    SSTREAM ssaddr;
+    ssaddr << ntohs(addr.sin_port);
+    return ssaddr.str();
+}
+
 //返回 ip地址:端口号:socket 格式的字符串
-STRING CSocketAddress::selfaddr() const
+STRING CSocketRequest::selfaddr() const
 {
     SOCKADDRIN addr;
     WORD32     size = sizeof(addr);
-    getsockname(fd, (SOCKADDR*)&addr, &size);
+    getsockname(m_fd, (SOCKADDR*)&addr, &size);
     SSTREAM ssaddr;
-    ssaddr << inet_ntoa(addr.sin_addr) << ":" << ntohs(addr.sin_port) << ":" << fd;
+    ssaddr << inet_ntoa(addr.sin_addr) << ":" << ntohs(addr.sin_port) << ":" << m_fd;
     return ssaddr.str();
 }
 
-STRING CSocketAddress::peeraddr() const
+STRING CSocketRequest::peeraddr() const
 {
     SOCKADDRIN addr;
     WORD32     size = sizeof(addr);
-    getpeername(fd, (SOCKADDR*)&addr, &size);
+    getpeername(m_fd, (SOCKADDR*)&addr, &size);
     SSTREAM ssaddr;
-    ssaddr << inet_ntoa(addr.sin_addr) << ":" << ntohs(addr.sin_port) << ":" << fd;
+    ssaddr << inet_ntoa(addr.sin_addr) << ":" << ntohs(addr.sin_port) << ":" << m_fd;
     return ssaddr.str();
-}
-
-//设置socket为非阻塞
-VOID CSocketAddress::noblock()
-{
-    fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK);
-}
-
-//设置socket地址各个字段
-VOID CSocketAddress::setaddr(const SOCKFD& fd, const STRING& ip, const WORD16& port, const BOOL& block)
-{
-    this->fd    = fd;
-    this->ip    = ip;
-    this->port  = port;
-    if(INVALIDFD == this->fd)
-    {
-        SOCKET_TRACE("INVALIDFD == fd\n");
-        return;
-    }
-    if(!block)
-    {
-        fcntl(this->fd, F_SETFL, fcntl(this->fd, F_GETFL, 0) | O_NONBLOCK);
-    }
 }
 
 //关闭socket
-VOID CSocketAddress::closefd()
+VOID CSocketRequest::closefd()
 {
-    if(INVALIDFD != fd)
+    if(INVALIDFD != m_fd)
     {
         SOCKET_TRACE("disconnect: %s\n", peeraddr().c_str());
-        close(fd);
-        fd = INVALIDFD;
+        close(m_fd);
+        m_fd = INVALIDFD;
     }
 }
 

@@ -6,34 +6,36 @@ BOOL CTcpServerRequest::initialize(const STRING& ip, const WORD16& port, const B
 {
     WORD32      opt  = 1;
     SOCKADDRIN  addr = {0};
-    SOCKFD      fd   = INVALIDFD;
     //创建socket
-    fd = socket(AF_INET, SOCK_STREAM, 0);
-    if(-1 == fd)
+    m_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if(-1 == m_fd)
     {
         perror("socket failed");
         return FALSE;
     }
     //设置地址重用
-    setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (CHAR*)&opt, sizeof(opt));
+    setsockopt(m_fd, SOL_SOCKET, SO_REUSEADDR, (CHAR*)&opt, sizeof(opt));
     addr.sin_family      = AF_INET;
     addr.sin_port        = htons(port);
     addr.sin_addr.s_addr = ("" == ip ? htonl(INADDR_ANY) : inet_addr(ip.c_str()));
     //绑定ip地址和端口
-    if(-1 == bind(fd, (SOCKADDR*)&addr, sizeof(addr)))
+    if(-1 == bind(m_fd, (SOCKADDR*)&addr, sizeof(addr)))
     {
         SOCKET_TRACE("bind failed, errno %d: %s\n", errno, strerror(errno));
-        close(fd);
+        close(m_fd);
         return FALSE;
     }
     //开始监听
-    if(-1 == listen(fd, SOCKET_TCPSERVER_LISTEN_BACKLOG))
+    if(-1 == listen(m_fd, SOCKET_TCPSERVER_LISTEN_BACKLOG))
     {
         SOCKET_TRACE("listen failed, errno %d: %s\n", errno, strerror(errno));
-        close(fd);
+        close(m_fd);
         return FALSE;
     }
-    m_sockaddr.setaddr(fd, ip, port, block);
+    if(!block)
+    {
+        fcntl(m_fd, F_SETFL, fcntl(m_fd, F_GETFL, 0) | O_NONBLOCK);
+    }
     return TRUE;
 }
 
@@ -43,7 +45,7 @@ BOOL CTcpServerRequest::activate(const BOOL& block)
     SOCKFD     sockfd = -1;
     SOCKADDRIN addrin = {0};
     WORD32     addlen = sizeof(addrin);
-    SOCKFD     servfd = m_sockaddr.fd;
+    SOCKFD     servfd = m_fd;
 
     if(INVALIDFD == servfd)
     {
@@ -58,8 +60,12 @@ BOOL CTcpServerRequest::activate(const BOOL& block)
     }
     else
     {
-        m_sockaddr.setaddr(sockfd, inet_ntoa(addrin.sin_addr), ntohs(addrin.sin_port), block);
-        SOCKET_TRACE("accept from: %s\n", m_sockaddr.peeraddr().c_str());
+        m_fd = sockfd;
+        if(!block)
+        {
+            fcntl(m_fd, F_SETFL, fcntl(m_fd, F_GETFL, 0) | O_NONBLOCK);
+        }
+        SOCKET_TRACE("accept from: %s\n", peeraddr().c_str());
         return TRUE;
     }
 }
@@ -67,10 +73,10 @@ BOOL CTcpServerRequest::activate(const BOOL& block)
 // Tcpserver接收数据 读取到一行为成功 成功后转process去处理
 BOOL CTcpServerRequest::receive()
 {
-    if(recvinfo(m_sockaddr.fd, m_sockaddr.rbuff))
+    if(recvinfo(m_fd, m_rbuff))
     {
         STRING line;
-        if(getline(m_sockaddr.rbuff, line))
+        if(getline(m_rbuff, line))
         {
             cout << "recv: " << line << endl;
         }
@@ -78,16 +84,16 @@ BOOL CTcpServerRequest::receive()
     }
     else
     {
-        m_sockaddr.closefd();
+        closefd();
         return FALSE;
     }
 }
 // Tcpserver应答数据处理
 BOOL CTcpServerRequest::dispatch()
 {
-    if(!m_sockaddr.sbuff.empty())
+    if(!m_sbuff.empty())
     {
-        sendinfo(m_sockaddr.fd, m_sockaddr.sbuff);
+        sendinfo(m_fd, m_sbuff);
     }
     return TRUE;
 }

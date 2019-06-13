@@ -28,7 +28,7 @@ BOOL CWebSocketRequest::receive_frame_byte1()
     if(WS_RECV_BYTE1 == m_rcvstat)
     {
         STRING info;
-        if(getsize(m_sockaddr.rbuff, info, 1))
+        if(getsize(m_rbuff, info, 1))
         {
             m_fin = (info[0] & 0x80) == 0x80;
             m_opcode = info[0] & 0x0F;
@@ -44,7 +44,7 @@ BOOL CWebSocketRequest::receive_frame_byte2()
     if(WS_RECV_BYTE2 == m_rcvstat)
     {
         STRING info;
-        if(getsize(m_sockaddr.rbuff, info, 1))
+        if(getsize(m_rbuff, info, 1))
         {
             m_mask = (info[0] & 0x80) == 0x80;
             m_bodylen = info[0] & 0x7F;
@@ -63,7 +63,7 @@ BOOL CWebSocketRequest::receive_frame_length()
         STRING info;
         if(126 == m_bodylen)
         {
-            if(getsize(m_sockaddr.rbuff, info, 2))
+            if(getsize(m_rbuff, info, 2))
             {
                 m_bodylen = info[0];
                 m_bodylen = (m_bodylen << 8) | info[1];
@@ -72,7 +72,7 @@ BOOL CWebSocketRequest::receive_frame_length()
         }
         else if(127 == m_bodylen)
         {
-            if(getsize(m_sockaddr.rbuff, info, 8))
+            if(getsize(m_rbuff, info, 8))
             {
                 m_bodylen = info[0];
                 m_bodylen = (m_bodylen << 8) | info[1];
@@ -101,7 +101,7 @@ BOOL CWebSocketRequest::receive_frame_maskey()
     {
         if(m_mask)
         {
-            if(getsize(m_sockaddr.rbuff, info, 4))
+            if(getsize(m_rbuff, info, 4))
             {
                 memcpy(m_maskey, info.c_str(), 4);
                 m_rcvstat = WS_RECV_DATA;
@@ -128,7 +128,7 @@ BOOL CWebSocketRequest::receive_frame_reqbody()
 {
     if(WS_RECV_DATA == m_rcvstat)
     {
-        if(getsize(m_sockaddr.rbuff, m_reqbody, m_bodylen))
+        if(getsize(m_rbuff, m_reqbody, m_bodylen))
         {
             umask((char*)m_reqbody.c_str(), m_reqbody.size(), m_maskey);
             m_rcvstat = WS_RECV_BYTE1;
@@ -147,37 +147,37 @@ BOOL CWebSocketRequest::response_frame(const STRING& data)
     WORD64 length = data.size();
     if(length < 126)
     {
-        m_sockaddr.sbuff.append(1, (CHAR)0x81);
-        m_sockaddr.sbuff.append(1, (CHAR)length);
+        m_sbuff.append(1, (CHAR)0x81);
+        m_sbuff.append(1, (CHAR)length);
     }
     else if(length < 0xFFFF)
     {
-        m_sockaddr.sbuff.append(1, (CHAR)0x81);
-        m_sockaddr.sbuff.append(1, (CHAR)126);
-        m_sockaddr.sbuff.append(1, (CHAR)(length >> 8));
-        m_sockaddr.sbuff.append(1, (CHAR)length);
+        m_sbuff.append(1, (CHAR)0x81);
+        m_sbuff.append(1, (CHAR)126);
+        m_sbuff.append(1, (CHAR)(length >> 8));
+        m_sbuff.append(1, (CHAR)length);
     }
     else
     {
-        m_sockaddr.sbuff.append(1, (CHAR)0x81);
-        m_sockaddr.sbuff.append(1, (CHAR)127);
-        m_sockaddr.sbuff.append(1, (CHAR)(length >> 56));
-        m_sockaddr.sbuff.append(1, (CHAR)(length >> 48));
-        m_sockaddr.sbuff.append(1, (CHAR)(length >> 40));
-        m_sockaddr.sbuff.append(1, (CHAR)(length >> 32));
-        m_sockaddr.sbuff.append(1, (CHAR)(length >> 24));
-        m_sockaddr.sbuff.append(1, (CHAR)(length >> 16));
-        m_sockaddr.sbuff.append(1, (CHAR)(length >>  8));
-        m_sockaddr.sbuff.append(1, (CHAR)(length));
+        m_sbuff.append(1, (CHAR)0x81);
+        m_sbuff.append(1, (CHAR)127);
+        m_sbuff.append(1, (CHAR)(length >> 56));
+        m_sbuff.append(1, (CHAR)(length >> 48));
+        m_sbuff.append(1, (CHAR)(length >> 40));
+        m_sbuff.append(1, (CHAR)(length >> 32));
+        m_sbuff.append(1, (CHAR)(length >> 24));
+        m_sbuff.append(1, (CHAR)(length >> 16));
+        m_sbuff.append(1, (CHAR)(length >>  8));
+        m_sbuff.append(1, (CHAR)(length));
     }
-    m_sockaddr.sbuff.append(data, 0 , data.size());
+    m_sbuff.append(data, 0 , data.size());
     return TRUE;
 }
 
 //接收websocket一帧
 BOOL CWebSocketRequest::receive_frame()
 {
-    if(recvinfo(m_sockaddr.fd, m_sockaddr.rbuff))
+    if(recvinfo(m_fd, m_rbuff))
     {
         receive_frame_byte1();
         receive_frame_byte2();
@@ -205,17 +205,17 @@ BOOL CWebSocketRequest::receive()
 // 应答WebSocket握手请求
 BOOL CWebSocketRequest::response_upgrade_websocket()
 {
-    m_sockaddr.sbuff.append("HTTP/1.1 101 Switching Protocols\r\n");
-    m_sockaddr.sbuff.append("Upgrade: websocket\r\n");
-    m_sockaddr.sbuff.append("Connection: Upgrade\r\n");
-    m_sockaddr.sbuff.append("Sec-WebSocket-Accept: ");
+    m_sbuff.append("HTTP/1.1 101 Switching Protocols\r\n");
+    m_sbuff.append("Upgrade: websocket\r\n");
+    m_sbuff.append("Connection: Upgrade\r\n");
+    m_sbuff.append("Sec-WebSocket-Accept: ");
 
     CHAR sha1str[20] = {0};
     STRING wskey = m_headers["Sec-WebSocket-Key"] + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
     sha1(wskey.c_str(), wskey.size(), sha1str);
 
-    m_sockaddr.sbuff.append(base64_encode(STRING(sha1str,sizeof(sha1str))));
-    m_sockaddr.sbuff.append("\r\n\r\n");
+    m_sbuff.append(base64_encode(STRING(sha1str,sizeof(sha1str))));
+    m_sbuff.append("\r\n\r\n");
 
     return TRUE;
 }

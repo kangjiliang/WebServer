@@ -38,7 +38,6 @@ public:
     VOID response_file(const STRING& name, const FILEST& state);
     VOID response_path(const STRING& path);
 
-    virtual STRING decodeurl(const STRING& url) {return url;}
     virtual VOID process_GET();
     virtual VOID process_POST();
     virtual BOOL receive();

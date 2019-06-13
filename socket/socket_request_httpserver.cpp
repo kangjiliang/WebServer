@@ -1,5 +1,5 @@
 #include "socket_request_httpserver.h"
-
+#include "codec.h"
 
 //显示http请求的信息
 VOID CHttpServerRequest::show_reqinfo()
@@ -19,7 +19,7 @@ VOID CHttpServerRequest::show_reqinfo()
 VOID CHttpServerRequest::show_respinfo()
 {
     SOCKET_TRACE("--------------------------------------------\n");
-    SOCKET_TRACE("%s\n", m_sockaddr.sbuff.c_str());
+    SOCKET_TRACE("%s\n", m_sbuff.c_str());
     SOCKET_TRACE("--------------------------------------------\n");
 }
 
@@ -47,7 +47,7 @@ VOID CHttpServerRequest::reset_reqinfo()
 */
 BOOL CHttpServerRequest::receive()
 {
-    if(recvinfo(m_sockaddr.fd, m_sockaddr.rbuff))
+    if(recvinfo(m_fd, m_rbuff))
     {
         receive_reqline();
         receive_headers();
@@ -55,7 +55,7 @@ BOOL CHttpServerRequest::receive()
     }
     else
     {
-        m_sockaddr.closefd();
+        closefd();
         return FALSE;
     }
 }
@@ -66,14 +66,14 @@ BOOL CHttpServerRequest::receive_reqline()
     if(HTTP_RECV_REQLINE == m_rcvstat)
     {
         STRING line;
-        if(getline(m_sockaddr.rbuff, line))
+        if(getline(m_rbuff, line))
         {
             STRVEC strvec;
             strsplit(line, " ", strvec);
             if(strvec.size() > 2)
             {
                 m_method  = strvec[0];
-                m_requrl  = decodeurl(strvec[1]); //对url进行解码
+                m_requrl  = url_decode(strvec[1]); //对url进行解码
                 m_version = strvec[2];
                 //URL结构 <scheme>://<user>:<password>@<host>:<port>/<path>;<params>?<query>#<frag>
                 STRVEC urlvec;
@@ -102,7 +102,7 @@ BOOL CHttpServerRequest::receive_headers()
     if(HTTP_RECV_HEADERS == m_rcvstat)
     {
         STRING line;
-        if(!getline(m_sockaddr.rbuff, line))
+        if(!getline(m_rbuff, line))
         {
             return FALSE;
         }
@@ -135,7 +135,7 @@ BOOL CHttpServerRequest::receive_reqbody()
 {
     if(HTTP_RECV_REQBODY == m_rcvstat)
     {
-        if(getsize(m_sockaddr.rbuff, m_reqbody, m_bodylen))
+        if(getsize(m_rbuff, m_reqbody, m_bodylen))
         {
             return TRUE;
         }
@@ -169,24 +169,24 @@ BOOL CHttpServerRequest::process()
 //响应一次http请求
 VOID CHttpServerRequest::response(const CHAR* info, WORD64 size)
 {
-    m_sockaddr.sbuff.append(m_respstat);
-    m_sockaddr.sbuff.append("\r\n");
+    m_sbuff.append(m_respstat);
+    m_sbuff.append("\r\n");
 
-    m_sockaddr.sbuff.append("SERVER: ");
-    m_sockaddr.sbuff.append(HTTP_RESPONSE_SERVER);
-    m_sockaddr.sbuff.append("\r\n");
+    m_sbuff.append("SERVER: ");
+    m_sbuff.append(HTTP_RESPONSE_SERVER);
+    m_sbuff.append("\r\n");
 
-    m_sockaddr.sbuff.append("Content-Type: ");
-    m_sockaddr.sbuff.append(m_respmime);
-    m_sockaddr.sbuff.append("\r\n");
+    m_sbuff.append("Content-Type: ");
+    m_sbuff.append(m_respmime);
+    m_sbuff.append("\r\n");
 
-    m_sockaddr.sbuff.append("Content-Length: ");
+    m_sbuff.append("Content-Length: ");
     SSTREAM sslength;
     sslength << size;
-    m_sockaddr.sbuff.append(sslength.str());
-    m_sockaddr.sbuff.append("\r\n\r\n");
+    m_sbuff.append(sslength.str());
+    m_sbuff.append("\r\n\r\n");
 
-    m_sockaddr.sbuff.append(info, size);
+    m_sbuff.append(info, size);
 }
 
 VOID CHttpServerRequest::response(const STRING& info)
@@ -311,7 +311,7 @@ VOID CHttpServerRequest::process_cgiscript_readresponse(FILEFD fd)
     CHAR  ch;
     while(0 < read(fd, &ch, 1))
     {
-        m_sockaddr.sbuff.append(1, ch);
+        m_sbuff.append(1, ch);
     }
 }
 
@@ -360,9 +360,9 @@ VOID CHttpServerRequest::process_cgiscript_setallenv()
     process_cgiscript_setoneenv("CONTENT_LENGTH",   m_bodylen);
     process_cgiscript_setoneenv("QUERY_STRING",     m_query);
     process_cgiscript_setoneenv("SCRIPT_NAME",      m_reqfile);
-    process_cgiscript_setoneenv("REMOTE_ADDR",      m_sockaddr.ip);
-    process_cgiscript_setoneenv("SERVER_NAME",      m_sockaddr.selfaddr());
-    process_cgiscript_setoneenv("SERVER_PORT",      m_sockaddr.port);
+    process_cgiscript_setoneenv("REMOTE_ADDR",      peerip());
+    process_cgiscript_setoneenv("SERVER_NAME",      selfaddr());
+    process_cgiscript_setoneenv("SERVER_PORT",      selfport());
     process_cgiscript_setoneenv("SERVER_PROTOCOL",  HTTP_RESPONSE_VERSION);
     process_cgiscript_setoneenv("DOCUMENT_ROOT",    m_rootdir);
     process_cgiscript_setoneenv("SERVER_SOFTWARE",  HTTP_RESPONSE_SERVER);

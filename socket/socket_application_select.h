@@ -7,7 +7,7 @@
 class CSocketApplicationSelect : public CSocketApplication
 {
 public:
-    CSocketApplicationSelect(STRING serverip, WORD16 serverport, CSocketRequest* req) :\
+    CSocketApplicationSelect(STRING serverip, WORD16 serverport, CSocketHandler* req) :\
                              CSocketApplication(serverip, serverport, req){}
 protected:
     virtual VOID working();

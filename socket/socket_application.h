@@ -1,23 +1,23 @@
 #ifndef _SOCKET_APPLICATION_H
 #define _SOCKET_APPLICATION_H
 
-#include "socket_request.h"
+#include "handler.h"
 
-typedef list<CSocketRequest*>           REQUESTLIST;
-typedef list<CSocketRequest*>::iterator REQUESTITER;
-typedef map<SOCKFD, CSocketRequest*>    REQUESTMAP;
+typedef list<CSocketHandler*>           REQUESTLIST;
+typedef list<CSocketHandler*>::iterator REQUESTITER;
+typedef map<SOCKFD, CSocketHandler*>    REQUESTMAP;
 
 
 // 定义socket应用基类
 class CSocketApplication
 {
 public:
-    CSocketApplication(STRING ip, WORD16 port, CSocketRequest* req) : m_reqtype(req), m_ip(ip), m_port(port), m_block(FALSE) {}
+    CSocketApplication(STRING ip, WORD16 port, CSocketHandler* req) : m_reqtype(req), m_ip(ip), m_port(port), m_block(FALSE) {}
     virtual ~CSocketApplication();
     virtual VOID startup();
 protected:
     virtual VOID working() = 0;
-    CSocketRequest*  m_reqtype;  // 请求原型 (使用原型模式)
+    CSocketHandler*  m_reqtype;  // 请求原型 (使用原型模式)
     STRING m_ip;
     WORD16 m_port;
     BOOL   m_block;

@@ -40,7 +40,7 @@ VOID CSocketApplicationEpoll::working()
         {
             for(SWORD32 i = 0; i < retnum; i++)
             {
-                CSocketRequest* req = (CSocketRequest*)m_epevs[i].data.ptr;
+                CSocketHandler* req = (CSocketHandler*)m_epevs[i].data.ptr;
                 if(NULL != req)
                 {
                     if(req == m_reqtype)
@@ -58,11 +58,11 @@ VOID CSocketApplicationEpoll::working()
     }
 }
 
-VOID CSocketApplicationEpoll::epoll_self(WORD32 events, CSocketRequest* req)
+VOID CSocketApplicationEpoll::epoll_self(WORD32 events, CSocketHandler* req)
 {
     if(events & EPOLLIN)
     {
-        CSocketRequest* newreq = m_reqtype->clone();
+        CSocketHandler* newreq = m_reqtype->clone();
         if(NULL != newreq)
         {
             if(newreq->activate(m_block))
@@ -77,7 +77,7 @@ VOID CSocketApplicationEpoll::epoll_self(WORD32 events, CSocketRequest* req)
     }
 }
 
-VOID CSocketApplicationEpoll::epoll_peer(WORD32 events, CSocketRequest* req)
+VOID CSocketApplicationEpoll::epoll_peer(WORD32 events, CSocketHandler* req)
 {
     if(events & EPOLLIN)
     {

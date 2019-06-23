@@ -4,7 +4,7 @@
 /* 多线程多链接 阻塞         */
 VOID* CSocketApplicationMultiThread::callback(VOID* args)
 {
-    CSocketRequest* req = (CSocketRequest*)args;
+    CSocketHandler* req = (CSocketHandler*)args;
     while(NULL != req)
     {
         if(INVALIDFD != req->fd())
@@ -28,7 +28,7 @@ VOID CSocketApplicationMultiThread::working()
 {
     while(NULL != m_reqtype)
     {
-        CSocketRequest* req = m_reqtype->clone();
+        CSocketHandler* req = m_reqtype->clone();
         if(NULL != req)
         {
             if(req->activate(m_block))  //没有新链接 会阻塞

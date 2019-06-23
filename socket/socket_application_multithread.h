@@ -7,7 +7,7 @@
 class CSocketApplicationMultiThread : public CSocketApplication
 {
 public:
-    CSocketApplicationMultiThread(STRING serverip, WORD16 serverport, CSocketRequest* req) : CSocketApplication(serverip, serverport, req)
+    CSocketApplicationMultiThread(STRING serverip, WORD16 serverport, CSocketHandler* req) : CSocketApplication(serverip, serverport, req)
     {
         m_block = TRUE;
     }

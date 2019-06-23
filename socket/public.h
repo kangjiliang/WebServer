@@ -95,13 +95,15 @@ typedef VOID* (*FUNCPTR)(VOID* param);
 /*------------------------------------------------*/
 #define SOCKET_TRACE              printf
 /*------------------------------------------------*/
-enum SOCKET_RECEIVE_RESULT
-{
-    SOCKET_RECEIVE_ERROR,
-    SOCKET_RECEIVE_NOTENOUGH,
-    SOCKET_RECEIVE_SUCCESS,
-};
 
+
+BOOL sendinfo(const SOCKFD& fd, STRING& info);
+
+
+STRING getgmttime(TIMET timestamp);
+BOOL   getline(STRING& buffer, STRING& line);
+BOOL   getsize(STRING& buffer, STRING& str, WORD64 size);
+VOID   strsplit(const STRING& str, STRING sep, STRVEC& strvec);
 
 
 #endif

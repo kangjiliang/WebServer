@@ -1,173 +1,52 @@
-#include "socket_request_httpserver.h"
+#include "handler_httpserver.h"
 #include "codec.h"
 
 //显示http请求的信息
-VOID CHttpServerRequest::show_reqinfo()
+VOID CHttpHandler::show_reqinfo()
 {
     SOCKET_TRACE("********************************************\n");
-    SOCKET_TRACE("%s %s %s\n", m_method.c_str(), m_requrl.c_str(), m_version.c_str());
-    STRMAP::iterator it = m_headers.begin();
-    while(it != m_headers.end())
+    STRMAP::iterator it = m_reqinfo.begin();
+    while(it != m_reqinfo.end())
     {
         SOCKET_TRACE("%s: %s\n", it->first.c_str(), it->second.c_str());
         it++;
     }
-    SOCKET_TRACE("%s\n", m_reqbody.c_str());
     SOCKET_TRACE("********************************************\n");
 }
 
-VOID CHttpServerRequest::show_respinfo()
+VOID CHttpHandler::show_respinfo()
 {
-    SOCKET_TRACE("--------------------------------------------\n");
+    SOCKET_TRACE("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n");
     SOCKET_TRACE("%s\n", m_sbuff.c_str());
-    SOCKET_TRACE("--------------------------------------------\n");
-}
-
-VOID CHttpServerRequest::reset_reqinfo()
-{
-    m_rcvstat = HTTP_RECV_REQLINE;
-    m_method.clear();
-    m_requrl.clear();
-    m_version.clear();
-    m_reqfile.clear();
-    m_query.clear();
-    m_headers.clear();
-    m_reqbody.clear();
-    m_bodylen = 0;
-    m_respstat.clear();
-    m_respmime.clear();
-}
-
-
-/* 接收一次http请求，结构如下
-   请求行     reqline  方法 空格 URL 空格 协议版本
-   请求头部   headers  每行都是 key 冒号 value
-   空行       ""       CRLF
-   请求消息体 reqbody
-*/
-BOOL CHttpServerRequest::receive()
-{
-    if(recvinfo(m_fd, m_rbuff))
-    {
-        receive_reqline();
-        receive_headers();
-        return receive_reqbody();
-    }
-    else
-    {
-        closefd();
-        return FALSE;
-    }
-}
-
-//接收http请求的第一行 结构为: 方法 空格 URL 空格 协议版本
-BOOL CHttpServerRequest::receive_reqline()
-{
-    if(HTTP_RECV_REQLINE == m_rcvstat)
-    {
-        STRING line;
-        if(getline(m_rbuff, line))
-        {
-            STRVEC strvec;
-            strsplit(line, " ", strvec);
-            if(strvec.size() > 2)
-            {
-                m_method  = strvec[0];
-                m_requrl  = url_decode(strvec[1]); //对url进行解码
-                m_version = strvec[2];
-                //URL结构 <scheme>://<user>:<password>@<host>:<port>/<path>;<params>?<query>#<frag>
-                STRVEC urlvec;
-                STRING urlinfo;
-                strsplit(m_requrl, "#", urlvec);
-                urlinfo = urlvec[0];
-                strsplit(urlinfo, "?", urlvec);
-                if(urlvec.size() > 0)
-                {
-                    m_reqfile = m_rootdir + "/" + urlvec[0];
-                }
-                if(urlvec.size() > 1)
-                {
-                    m_query = urlvec[1];
-                }
-            }
-            m_rcvstat = HTTP_RECV_HEADERS;
-        }
-    }
-    return TRUE;
-}
-
-//接收http请求的头部 每一行结构为: key: value
-BOOL CHttpServerRequest::receive_headers()
-{
-    if(HTTP_RECV_HEADERS == m_rcvstat)
-    {
-        STRING line;
-        if(!getline(m_rbuff, line))
-        {
-            return FALSE;
-        }
-        //如果读取到一个空行 则消息头接收完毕 开始接收消息体
-        if("" == line)
-        {
-            m_rcvstat = HTTP_RECV_REQBODY;
-        }
-        else
-        {
-            //消息头以冒号分割
-            WORD64 splitpos = line.find(": ");
-            if(string::npos != splitpos)
-            {
-                STRING key = line.substr(0, splitpos);
-                STRING val =  line.substr(splitpos+2);
-                m_headers[key] = val;
-                if(key == "Content-Length")
-                {
-                    m_bodylen = atoi(val.c_str());
-                }
-            }
-        }
-    }
-    return TRUE;
-}
-
-//接收http请求的消息体 长度由Content-Length确定
-BOOL CHttpServerRequest::receive_reqbody()
-{
-    if(HTTP_RECV_REQBODY == m_rcvstat)
-    {
-        if(getsize(m_rbuff, m_reqbody, m_bodylen))
-        {
-            return TRUE;
-        }
-    }
-    return FALSE;
+    SOCKET_TRACE("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n");
 }
 
 //处理一次http请求
-BOOL CHttpServerRequest::process()
+BOOL CHttpHandler::process()
 {
     show_reqinfo();
-
-    if("GET" == m_method && m_query == "")
+    STRING method = m_reqinfo[HTTP_METHOD];
+    STRING query  = m_reqinfo[HTTP_QUERY];
+    if("GET" == method && query == "")
     {
         process_GET();
     }
-    else if(("GET" == m_method && m_query != "") || ("POST" == m_method))
+    else if(("GET" == method && query != "") || ("POST" == method))
     {
         process_POST();
     }
     else
     {
         m_respstat = HTTP_RESPONSE_VERSION + "501 Not Implemented";
-        response(m_method + " Not Implement");
+        response(method + " Not Implement");
     }
-    reset_reqinfo(); //重置http请求的信息 准备接收下一次请求
+    m_receiver->reset(m_reqinfo); //重置http请求的信息 准备接收下一次请求
     show_respinfo();
     return TRUE;
 }
 
 //响应一次http请求
-VOID CHttpServerRequest::response(const CHAR* info, WORD64 size)
+VOID CHttpHandler::response(const CHAR* info, WORD64 size)
 {
     m_sbuff.append(m_respstat);
     m_sbuff.append("\r\n");
@@ -189,13 +68,13 @@ VOID CHttpServerRequest::response(const CHAR* info, WORD64 size)
     m_sbuff.append(info, size);
 }
 
-VOID CHttpServerRequest::response(const STRING& info)
+VOID CHttpHandler::response(const STRING& info)
 {
     response(info.c_str(), info.size());
 }
 
 //处理GET方法 url是一个文件时 读取文件内容 发送给客户端
-VOID CHttpServerRequest::response_file(const STRING& filename, const FILEST& state)
+VOID CHttpHandler::response_file(const STRING& filename, const FILEST& state)
 {
     IFSTREAM filestream;
     SSTREAM  filebuffer;
@@ -207,7 +86,7 @@ VOID CHttpServerRequest::response_file(const STRING& filename, const FILEST& sta
 }
 
 //处理GET方法 url是一个目录时 获取目录下的文件列表 发送给客户端
-VOID CHttpServerRequest::response_path(const STRING& path)
+VOID CHttpHandler::response_path(const STRING& path)
 {
     STRING  files;
     DIR*    dir  = NULL;
@@ -231,43 +110,44 @@ VOID CHttpServerRequest::response_path(const STRING& path)
 //处理GET方法
 //如果url是文件 则读取文件内容 发送给客户端
 //如果url是目录 则查找有没有index.html文件 有则发送文件内容 没有则发送文件列表
-VOID CHttpServerRequest::process_GET()
+VOID CHttpHandler::process_GET()
 {
     FILEST state;
-
-    if(-1 == stat(m_reqfile.c_str(), &state))
+    STRING reqfile = m_rootdir + "/" + m_reqinfo[HTTP_REQFILE];
+    if(-1 == stat(reqfile.c_str(), &state))
     {
         m_respstat = HTTP_RESPONSE_VERSION + "404 Not Found";
-        response(m_reqfile + " Not Found");
+        response(reqfile + " Not Found");
         return;
     }
     if(S_ISDIR(state.st_mode))
     {
-        STRING file = m_reqfile + "/" + "index.html";
+        STRING file = reqfile + "/" + "index.html";
         if(0 == stat(file.c_str(), &state) && !S_ISDIR(state.st_mode))
         {
             return response_file(file, state);
         }
-        return response_path(m_reqfile);
+        return response_path(reqfile);
     }
     else
     {
-        return response_file(m_reqfile, state);
+        return response_file(reqfile, state);
     }
 }
 
 //处理POST方法 暂仅支持使用cgi脚本处理
-VOID CHttpServerRequest::process_POST()
+VOID CHttpHandler::process_POST()
 {
     process_cgiscript();
 }
 
 //处理cgi脚本 创建子进程执行脚本 读取脚本的输出 应答给客户端
-VOID CHttpServerRequest::process_cgiscript()
+VOID CHttpHandler::process_cgiscript()
 {
     FILEFD input[2]  = {0};  //子进程的读通道
     FILEFD output[2] = {0};  //子进程的写通道
     PID    pid;
+    STRING cgiscript = m_rootdir + "/" + m_reqinfo[HTTP_REQFILE];
     //创建管道和子进程
     if(pipe(input) < 0 || pipe(output) < 0 || (pid = fork()) < 0)
     {
@@ -283,7 +163,7 @@ VOID CHttpServerRequest::process_cgiscript()
         close(input[FDWRITE]);    //关闭子进程 读通道 的写方向
         close(output[FDREAD]);    //关闭子进程 写通道 的读方向
         process_cgiscript_setallenv();
-        process_cgiscript_runcgi();
+        process_cgiscript_runcgi(cgiscript);
         exit(0);
     }
     //父进程读取cgi的输出 应答客户端
@@ -292,7 +172,7 @@ VOID CHttpServerRequest::process_cgiscript()
         PSTAT st;
         close(input[FDREAD]);   //父进程 在子进程的读通道上 可写
         close(output[FDWRITE]); //父进城 在子进程的写通道上 可读
-        process_cgiscript_writereqbody(input[FDWRITE], m_reqbody);
+        process_cgiscript_writereqbody(input[FDWRITE], m_reqinfo[HTTP_REQBODY]);
         process_cgiscript_readresponse(output[FDREAD]);
         close(input[FDWRITE]);
         close(output[FDREAD]);
@@ -301,12 +181,12 @@ VOID CHttpServerRequest::process_cgiscript()
 }
 
 //需要循环写 待实现
-VOID CHttpServerRequest::process_cgiscript_writereqbody(FILEFD fd, const STRING& reqbody)
+VOID CHttpHandler::process_cgiscript_writereqbody(FILEFD fd, const STRING& reqbody)
 {
     write(fd, reqbody.c_str(), reqbody.size());
 }
 
-VOID CHttpServerRequest::process_cgiscript_readresponse(FILEFD fd)
+VOID CHttpHandler::process_cgiscript_readresponse(FILEFD fd)
 {
     CHAR  ch;
     while(0 < read(fd, &ch, 1))
@@ -316,19 +196,19 @@ VOID CHttpServerRequest::process_cgiscript_readresponse(FILEFD fd)
 }
 
 
-VOID CHttpServerRequest::process_cgiscript_setoneenv(const STRING& key, const WORD64& val)
+VOID CHttpHandler::process_cgiscript_setoneenv(const STRING& key, const WORD64& val)
 {
     SSTREAM valstr;
     valstr << val;
     setenv(key.c_str(), valstr.str().c_str(), 1);
 }
-VOID CHttpServerRequest::process_cgiscript_setoneenv(const STRING& key, const STRING& val)
+VOID CHttpHandler::process_cgiscript_setoneenv(const STRING& key, const STRING& val)
 {
     setenv(key.c_str(), val.c_str(), 1);
 }
 
 
-VOID CHttpServerRequest::process_cgiscript_setallenv()
+VOID CHttpHandler::process_cgiscript_setallenv()
 {
     /*
     cgiscript环境变量名称        说明
@@ -355,44 +235,44 @@ VOID CHttpServerRequest::process_cgiscript_setallenv()
     HTTP_REFERER          调用此脚本程序的文档
     HTTP_COOKIE           获取COOKIE键值对，多项之间以分号分隔，如：key1=value1;key2=value2
     */
-    process_cgiscript_setoneenv("REQUEST_METHOD",   m_method);
-    process_cgiscript_setoneenv("CONTENT_TYPE",     m_headers["Content-Type"]);
-    process_cgiscript_setoneenv("CONTENT_LENGTH",   m_bodylen);
-    process_cgiscript_setoneenv("QUERY_STRING",     m_query);
-    process_cgiscript_setoneenv("SCRIPT_NAME",      m_reqfile);
-    process_cgiscript_setoneenv("REMOTE_ADDR",      peerip());
-    process_cgiscript_setoneenv("SERVER_NAME",      selfaddr());
-    process_cgiscript_setoneenv("SERVER_PORT",      selfport());
-    process_cgiscript_setoneenv("SERVER_PROTOCOL",  HTTP_RESPONSE_VERSION);
-    process_cgiscript_setoneenv("DOCUMENT_ROOT",    m_rootdir);
-    process_cgiscript_setoneenv("SERVER_SOFTWARE",  HTTP_RESPONSE_SERVER);
-    process_cgiscript_setoneenv("HTTP_ACCEPT",      m_headers["Accept"]);
-    process_cgiscript_setoneenv("HTTP_USER_AGENT",  m_headers["User-Agent"]);
-    process_cgiscript_setoneenv("HTTP_REFERER",     m_headers["Referer"]);
-    process_cgiscript_setoneenv("HTTP_COOKIE",      m_headers["Cookie"]);
+    process_cgiscript_setoneenv("REQUEST_METHOD",   m_reqinfo[HTTP_METHOD]);
+    process_cgiscript_setoneenv("CONTENT_TYPE",     m_reqinfo["Content-Type"]);
+    process_cgiscript_setoneenv("CONTENT_LENGTH",   m_reqinfo["Content-Length"]);
+    process_cgiscript_setoneenv("QUERY_STRING",     m_reqinfo[HTTP_QUERY]);
+    //process_cgiscript_setoneenv("SCRIPT_NAME",      m_reqfile);
+    //process_cgiscript_setoneenv("REMOTE_ADDR",      peerip());
+    //process_cgiscript_setoneenv("SERVER_NAME",      selfaddr());
+    //process_cgiscript_setoneenv("SERVER_PORT",      selfport());
+    //process_cgiscript_setoneenv("SERVER_PROTOCOL",  HTTP_RESPONSE_VERSION);
+    //process_cgiscript_setoneenv("DOCUMENT_ROOT",    m_rootdir);
+    //process_cgiscript_setoneenv("SERVER_SOFTWARE",  HTTP_RESPONSE_SERVER);
+    //process_cgiscript_setoneenv("HTTP_ACCEPT",      m_headers["Accept"]);
+    //process_cgiscript_setoneenv("HTTP_USER_AGENT",  m_headers["User-Agent"]);
+    //process_cgiscript_setoneenv("HTTP_REFERER",     m_headers["Referer"]);
+    //process_cgiscript_setoneenv("HTTP_COOKIE",      m_headers["Cookie"]);
 }
 
 
-VOID CHttpServerRequest::process_cgiscript_runcgi()
+VOID CHttpHandler::process_cgiscript_runcgi(const STRING& cgiscript)
 {
-    if(0 != access(m_reqfile.c_str(), X_OK))
+    if(0 != access(cgiscript.c_str(), X_OK))
     {
-        SOCKET_TRACE("cgiscript is not executable, name:%s\n", m_reqfile.c_str());
+        SOCKET_TRACE("cgiscript is not executable, name:%s\n", cgiscript.c_str());
         return;
     }
     STRVEC strvec;
-    strsplit(m_reqfile, ".", strvec);
+    strsplit(cgiscript, ".", strvec);
     if(1 < strvec.size() && "py" == strvec[strvec.size() - 1])
     {
         execl(HTTP_CGISCRIPT_PYTHON.c_str(),
               HTTP_CGISCRIPT_PYTHON.c_str(),
-              m_reqfile.c_str(),
+              cgiscript.c_str(),
               NULL);
     }
     else
     {
-        execl(m_reqfile.c_str(),
-              m_reqfile.c_str(),
+        execl(cgiscript.c_str(),
+              cgiscript.c_str(),
               NULL);
     }
 }

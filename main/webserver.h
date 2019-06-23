@@ -1,18 +1,17 @@
 #ifndef _WEBSERVER_H
 #define _WEBSERVER_H
 
-#include "socket_request_httpserver.h"
-#include "socket_request_websocket.h"
+#include "handler_websocket.h"
 #include "socket_application_select.h"
 #include "socket_application_epoll.h"
 #include "socket_application_multithread.h"
 
 
 // webserver请求类 继承websocket类
-class CWebServerRequst : public CWebSocketRequest
+class CWebServerRequst : public CWSHandler
 {
 public:
-    CWebServerRequst(STRING rootdir) : CWebSocketRequest(rootdir){}
+    CWebServerRequst(STRING rootdir) : CWSHandler(rootdir){}
 };
 
 

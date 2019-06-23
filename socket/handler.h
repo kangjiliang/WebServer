@@ -1,23 +1,16 @@
-#ifndef _SOCKET_REQUEST_H
-#define _SOCKET_REQUEST_H
+#ifndef _HANDLER_H
+#define _HANDLER_H
 
 #include "public.h"
+#include "receiver.h"
 
-
-class CSocketReceiver
-{
-public:
-    virtual ~CSocketReceiver(){}
-    virtual CSocketReceiver* clone() = 0;
-    virtual WORD32 recvmessage(const SOCKFD& fd, STRMAP& info) = 0;
-};
 
 // 定义socket请求基类
-class CSocketRequest
+class CSocketHandler
 {
 public:
-    CSocketRequest():m_fd(INVALIDFD), m_rbuff(), m_sbuff(), m_reqinfo(), m_receiver(NULL){}
-    virtual ~CSocketRequest()
+    CSocketHandler():m_fd(INVALIDFD), m_rbuff(), m_sbuff(), m_reqinfo(), m_receiver(NULL){}
+    virtual ~CSocketHandler()
     {
         if(m_receiver)
         {
@@ -34,10 +27,10 @@ public:
     VOID    closefd();
     VOID    setreceiver(CSocketReceiver* receiver) {m_receiver = receiver;}
 
-    virtual CSocketRequest* clone() = 0;
+    virtual CSocketHandler* clone() = 0;
     virtual BOOL  initialize(const STRING& ip, const WORD16& port, const BOOL& block) = 0;
     virtual BOOL  activate(const BOOL& block) = 0;
-    virtual BOOL  receive() = 0;
+    virtual BOOL  receive();
     virtual BOOL  dispatch() = 0;
     virtual BOOL  process() = 0;
 protected:
@@ -48,16 +41,11 @@ protected:
     CSocketReceiver* m_receiver;
 };
 
-#define SOCKET_RECEIVER_CLONE(classname) \
-virtual CSocketReceiver* clone() \
-{\
-    return new classname(*this);\
-}
 
 #define SOCKET_REQUEST_CLONE(classname) \
-virtual CSocketRequest* clone() \
+virtual CSocketHandler* clone() \
 {\
-    CSocketRequest* req = new classname(*this);\
+    CSocketHandler* req = new classname(*this);\
     if(req && m_receiver)\
     {\
         req->setreceiver(m_receiver->clone());\
@@ -65,15 +53,12 @@ virtual CSocketRequest* clone() \
     return req; \
 }
 
-BOOL recvinfo(const SOCKFD& fd, STRING& info);
-BOOL sendinfo(const SOCKFD& fd, STRING& info);
 
-
-STRING getgmttime(TIMET timestamp);
-BOOL   getline(STRING& buffer, STRING& line);
-BOOL   getsize(STRING& buffer, STRING& str, WORD64 size);
-VOID   strsplit(const STRING& str, STRING sep, STRVEC& strvec);
-
+class CTcpHandler : public CSocketHandler
+{
+public:
+    virtual BOOL dispatch();
+};
 
 
 #endif

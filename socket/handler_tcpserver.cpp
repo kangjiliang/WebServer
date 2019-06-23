@@ -1,8 +1,8 @@
-#include "socket_request_tcpserver.h"
+#include "handler_tcpserver.h"
 
 
 // Tcpserver初始化 封装socket bind listen
-BOOL CTcpServerRequest::initialize(const STRING& ip, const WORD16& port, const BOOL& block)
+BOOL CTcpServerHandler::initialize(const STRING& ip, const WORD16& port, const BOOL& block)
 {
     WORD32      opt  = 1;
     SOCKADDRIN  addr = {0};
@@ -26,7 +26,7 @@ BOOL CTcpServerRequest::initialize(const STRING& ip, const WORD16& port, const B
         return FALSE;
     }
     //开始监听
-    if(-1 == listen(m_fd, SOCKET_TCPSERVER_LISTEN_BACKLOG))
+    if(-1 == listen(m_fd, TCPSERVER_LISTEN_BACKLOG))
     {
         SOCKET_TRACE("listen failed, errno %d: %s\n", errno, strerror(errno));
         close(m_fd);
@@ -40,7 +40,7 @@ BOOL CTcpServerRequest::initialize(const STRING& ip, const WORD16& port, const B
 }
 
 // Tcpserver激活 也就是accept等待客户端连接
-BOOL CTcpServerRequest::activate(const BOOL& block)
+BOOL CTcpServerHandler::activate(const BOOL& block)
 {
     SOCKFD     sockfd = -1;
     SOCKADDRIN addrin = {0};
@@ -69,40 +69,5 @@ BOOL CTcpServerRequest::activate(const BOOL& block)
         return TRUE;
     }
 }
-
-// Tcpserver接收数据 读取到一行为成功 成功后转process去处理
-BOOL CTcpServerRequest::receive()
-{
-    if(recvinfo(m_fd, m_rbuff))
-    {
-        STRING line;
-        if(getline(m_rbuff, line))
-        {
-            cout << "recv: " << line << endl;
-        }
-        return FALSE;
-    }
-    else
-    {
-        closefd();
-        return FALSE;
-    }
-}
-// Tcpserver应答数据处理
-BOOL CTcpServerRequest::dispatch()
-{
-    if(!m_sbuff.empty())
-    {
-        sendinfo(m_fd, m_sbuff);
-    }
-    return TRUE;
-}
-
-// Tcpserver处理接收到的数据 打印接收到的一行
-BOOL CTcpServerRequest::process()
-{
-    return TRUE;
-}
-
 
 

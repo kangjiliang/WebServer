@@ -2,12 +2,12 @@
 
 //单线程 单连接 非阻塞 select模式
 VOID CSocketApplicationSelect::working()
-{    
+{
     SWORD32 ret = 0;
 
     while(NULL != m_reqtype)
     {
-        m_timeval.tv_sec  = 1;   
+        m_timeval.tv_sec  = 1;
         m_timeval.tv_usec = 0;
 
         select_fdset();
@@ -35,12 +35,12 @@ VOID CSocketApplicationSelect::select_fdset()
 {
     SOCKFD peerfd = INVALIDFD;
     SOCKFD selffd = INVALIDFD;
-    
+
     FD_ZERO(&m_readset);
     FD_ZERO(&m_writeset);
     for(REQUESTITER it = m_requests.begin(); it != m_requests.end(); ++it)
     {
-        CSocketRequest* req = *it;
+        CSocketHandler* req = *it;
         if(NULL != req)
         {
             peerfd = req->fd();
@@ -75,7 +75,7 @@ VOID CSocketApplicationSelect::select_self()
     SOCKFD fd = m_reqtype->fd();
     if(INVALIDFD != fd && FD_ISSET(fd, &m_readset))
     {
-        CSocketRequest* req = m_reqtype->clone();
+        CSocketHandler* req = m_reqtype->clone();
         if(NULL != req)
         {
             if(req->activate(m_block))
@@ -84,13 +84,13 @@ VOID CSocketApplicationSelect::select_self()
             }
             else
             {
-                SOCKET_TRACE("activate failed\n");     
+                SOCKET_TRACE("activate failed\n");
                 delete req;
             }
         }
         else
         {
-            SOCKET_TRACE("clone failed\n");     
+            SOCKET_TRACE("clone failed\n");
         }
     }
 
@@ -100,7 +100,7 @@ VOID CSocketApplicationSelect::select_peer()
 {
     for(REQUESTITER it = m_requests.begin(); it != m_requests.end();)
     {
-        CSocketRequest* req = *it;
+        CSocketHandler* req = *it;
         if(NULL != req)
         {
             SOCKFD peerfd = req->fd();
@@ -129,7 +129,7 @@ VOID CSocketApplicationSelect::select_peer()
         }
         else
         {
-            SOCKET_TRACE("m_requests has NULL req\n");     
+            SOCKET_TRACE("m_requests has NULL req\n");
         }
         ++it;
     }
